@@ -10,6 +10,8 @@ int tonum(string s);
 
 void split(string s, string* tab);
 
+class NoName{};
+
 class Pipes : public Tool{
 public:
     void setEntry(string field, string value);
@@ -38,7 +40,7 @@ private:
     int pos[2], i, z, rows, cols, mode, num, prior;
     char tmp[100];
     bool adding;
-    string buff, val, is_saved, key, file_name, path, tryb, namebuff;
+    string buff, val, is_saved, key, file_name, path, tryb, namebuff, exepath;
     Lista boxlist;
     Box* tmpbox;
     int getMode();

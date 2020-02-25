@@ -42,6 +42,7 @@ Pipes::Pipes(int numm){
     is_saved = "YES";
     file_name = "";
     path = "";
+    exepath = "";
     //move(pos[0], pos[1]);
     mode = 0;
 
@@ -74,7 +75,7 @@ void Pipes::addB(){
     buff = namebuff;
     if(this->fileExist(buff)){
         try{
-            boxlist.add(new ElementB(new Box(pos[1]-1, pos[0]-1, buff)));
+            boxlist.add(new ElementB(new Box(pos[1]-1, pos[0]-1, exepath + buff)));
             move(rows-2, 0);
             clrtoeol();
         }
@@ -334,7 +335,7 @@ void Pipes::savef(){
             nazwa = path;
         }
         else{
-            throw(NoSpace());
+            throw(NoName());
         }
     }
     ofstream file(nazwa + ".pipes");
@@ -352,16 +353,13 @@ void Pipes::savef(){
 }
 
 void Pipes::openf(){
-    //move(rows-2, 0);
-    //printw("Podaj nazwe:");
     string nazwa, buffor, tab[41];
-    //char tmp[100];
-    //echo();
-    //scanw("%s", tmp);
-    //noecho();
-    //move(rows-2, 0);
-    //clrtoeol();
     nazwa = file_name;
+    if(!this->fileExist(nazwa + ".pipes")){
+        move(rows-2, 0);
+        printw("Nie istnieje podany plik!");
+        return;
+    }
     boxlist.reset();
     ifstream file(nazwa + ".pipes");
     int counter = 0;
@@ -394,6 +392,9 @@ void Pipes::setEntry(string field, string value){
     else if(field == "PRIO"){
         prior = tonum(value);
     }
+    else if(field == "EXEPATH"){
+        exepath = value;
+    }
 }
 
 string Pipes::getEntry(string field){
@@ -409,7 +410,7 @@ void Pipes::setPath(string namee){
 
 bool Pipes::fileExist(string namee){
     struct stat b;   
-    return (stat (namee.c_str(), &b) == 0);
+    return (stat ((exepath+namee).c_str(), &b) == 0);
 }
 
 
@@ -423,6 +424,7 @@ void Pipes::init(){
         backend->bind("#nano#<F1>%Add box!Type the name of exe or datafile:${NAME_BUFF}",[&](){addB();}, "Add/delete/edit box");
         backend->bind("#nano#<F2>%Add connection",[&](){addA();}, "Add/delete connection");
         backend->bind("#nano#<F3>%Change edition mode",[&](){changeMode();}, "Change edition mode");
+        backend->bind("#nano#<F4>%Set path of files!Type path for your files:${EXEPATH}",[&](){}, "Sets your execs and datafile path");
         backend->bind("#nano#<F5>%Save!Type a filename:${FILE_NAME}", [&](){savef();}, "Save file");
         backend->bind("#nano#<F6>%Open!Type a filename:${FILE_NAME}", [&](){openf();}, "Open file");
         break;
