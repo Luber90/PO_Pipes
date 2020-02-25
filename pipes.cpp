@@ -7,6 +7,8 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 
 
@@ -32,13 +34,14 @@ void split(string s, string *tab){
 }
 
 Pipes::Pipes(int numm){
+    tryb = "Adding";
     num = numm;
     pos[0] = 2;
     pos[1] = 1;
     adding = false;
     is_saved = "YES";
     file_name = "";
-    
+    path = "";
     //move(pos[0], pos[1]);
     mode = 0;
 
@@ -63,24 +66,32 @@ void Pipes::movedown(){
     if(pos[0] < rows - 4)pos[0]++;
     this->redraw();
 }
+
 void Pipes::addB(){
     move(pos[0], pos[1]);
-    echo();
-    scanw("%s", tmp);
-    buff = tmp;
-    try{
-        boxlist.add(new ElementB(new Box(pos[1]-1, pos[0]-1, buff)));
-        move(rows-2, 0);
-        clrtoeol();
+    //echo();
+    //scanw("%s", tmp);
+    buff = namebuff;
+    if(this->fileExist(buff)){
+        try{
+            boxlist.add(new ElementB(new Box(pos[1]-1, pos[0]-1, buff)));
+            move(rows-2, 0);
+            clrtoeol();
+        }
+        catch(NoSpace){
+            move(rows-2, 0);
+            printw("Brak miejsca!");
+        }
+        //noecho();
+        is_saved = "NO";
+        this->redraw();
     }
-    catch(NoSpace){
+    else{
         move(rows-2, 0);
-        printw("Brak miejsca!");
+        printw("Nie istnieje podany plik!");
     }
-    noecho();
-    is_saved = "NO";
-    this->redraw();
 }
+
 void Pipes::delB(){
     boxlist.del(pos[1], pos[0]);
     is_saved="NO";
@@ -89,20 +100,26 @@ void Pipes::delB(){
 
 void Pipes::editB(){
     move(rows-2, 0);
-    echo();
-    printw("Podaj edycje: ");
-    scanw("%s", tmp);
-    buff = tmp;
-    move(rows-2, 0);
-    clrtoeol();
-    move(pos[0], pos[1]);
-    boxlist.editB(pos[1], pos[0], buff);
+    buff = namebuff;
+    if(this->fileExist(buff)){
+        move(rows-2, 0);
+        clrtoeol();
+        move(pos[0], pos[1]);
+        boxlist.editB(pos[1], pos[0], buff);
+        is_saved = "NO";
+        this->redraw();
+    }
+    else{
+        move(rows-2, 0);
+        printw("Nie istnieje podany plik!");
+    }
 }
 
 void Pipes::addA(){
     if(!adding){
     for(z=0;z<boxlist.len();z++){
         if(boxlist[z]->getV()->isIn(pos[1], pos[0])){
+            backend->re_bind2("F2", "F2-Add/delete connection!Type the type of arrow:${PRIO}", [&](){addA();});
             adding = true;
             tmpbox = boxlist[z]->getV();
             move(rows-2, 0);
@@ -114,10 +131,12 @@ void Pipes::addA(){
     else{
         int c;
         move(rows-2, 0);
-        printw("Podaj rodzaj:");
-        echo();
-        scanw("%d", &c);
-        noecho();
+        //printw("Podaj rodzaj:");
+        //echo();
+        //scanw("%d", &c);
+        //noecho();
+        c = prior;
+        backend->re_bind2("F2", "F2-Add/delete connection", [&](){addA();});
         tmpbox->addArr(pos[1], pos[0], c);
         adding = false;
         move(rows-2, 0);
@@ -242,7 +261,7 @@ void Pipes::redraw(){
     move(rows-2, 30);
     printw("                      ");
     move(rows-2, 30);
-    printw("Tryb: %s", mode == 0 ? "Dodawania" : "Usuwania");
+    printw("Mode: %s", tryb.c_str());
     move(pos[0], pos[1]);
     refresh();
 }
@@ -276,8 +295,27 @@ int* Pipes::findP(Box* a, int xx, int yy){
 }
 
 void Pipes::changeMode(){
-    mode = mode == 0 ? 1 : 0;
+    switch(mode){
+        case 0:
+            mode = 1;
+            tryb = "Deleting";
+            backend->re_bind2("F1", "F1-Delete box", [&](){delB();});
+            backend->re_bind2("F2", "F2-Delete connection", [&](){delA();});
+            break;
+        case 1:
+            mode = 2;
+            tryb = "Editing";
+            backend->re_bind2("F1", "F1-Edit box!Type new name of file:${NAME_BUFF}", [&](){editB();});
+            break;
+        case 2:
+            mode = 0;
+            backend->re_bind2("F1", "F1-Add box!Type the name of exe or datafile:${NAME_BUFF}", [&](){addB();});
+            backend->re_bind2("F2", "F2-Add connection", [&](){addA();});
+            tryb = "Adding";
+            break;
+    }
     this->redraw();
+    move(pos[0], pos[1]);
 }
 
 int Pipes::getMode(){ return mode;}
@@ -289,21 +327,16 @@ void Pipes::delA(){
 }
 
 void Pipes::savef(){
-    //move(rows-2, 0);
-    //printw("Podaj nazwe:");
     string nazwa;
-    //char tmp[100];
-    //echo();
-    //scanw("%s", tmp);
-    //noecho();
-    //move(rows-2, 0);
-    //clrtoeol();
     nazwa = file_name;
     if (nazwa == ""){
-        throw(NoSpace());
+        if(!(path=="")){
+            nazwa = path;
+        }
+        else{
+            throw(NoSpace());
+        }
     }
-    //move(rows-2, 0);
-    //printw("%s", nazwa);
     ofstream file(nazwa + ".pipes");
     for(i = 0; i < boxlist.len(); i++){
         file << boxlist[i]->getV()->getX() << " " << boxlist[i]->getV()->getY() << " " << boxlist[i]->getV()->getComm() << " " <<  boxlist[i]->getV()->getArrC() << " ";
@@ -312,9 +345,9 @@ void Pipes::savef(){
         }
         file << "\n";
     }
-    //file << "***";
     file.close();
     is_saved="YES";
+    this->setPath(nazwa);
     this->redraw();
 }
 
@@ -355,13 +388,31 @@ void Pipes::setEntry(string field, string value){
     else if(field == "FILE_NAME"){
         file_name = value;
     }
+    else if(field == "NAME_BUFF"){
+        namebuff = value;
+    }
+    else if(field == "PRIO"){
+        prior = tonum(value);
+    }
 }
+
 string Pipes::getEntry(string field){
     if(field == "IS_SAVED"){
         return is_saved;
     }
     return NULL;
-    }
+}
+
+void Pipes::setPath(string namee){
+    path = namee;
+}
+
+bool Pipes::fileExist(string namee){
+    struct stat b;   
+    return (stat (namee.c_str(), &b) == 0);
+}
+
+
 void Pipes::init(){
     switch(num){
     case 0:
@@ -369,14 +420,11 @@ void Pipes::init(){
         backend->bind("#nano#<RARROW>%Move right",[&](){moveright();}, "Go right");
         backend->bind("#nano#<UARROW>%Move up",[&](){moveup();}, "Go up");
         backend->bind("#nano#<DARROW>%Move left",[&](){movedown();}, "Go down");
-        backend->bind("#nano#<F1>%Add/delete box",[&](){mode==0 ? addB() :delB();}, "Add/delete box");
-        backend->bind("#nano#<F2>%Add/delete connection",[&](){mode==0 ? addA() :delA();}, "Add/delete connection");
+        backend->bind("#nano#<F1>%Add box!Type the name of exe or datafile:${NAME_BUFF}",[&](){addB();}, "Add/delete/edit box");
+        backend->bind("#nano#<F2>%Add connection",[&](){addA();}, "Add/delete connection");
         backend->bind("#nano#<F3>%Change edition mode",[&](){changeMode();}, "Change edition mode");
-        backend->bind("#nano#<F4>%Save file",[&](){savef();}, "Save file");
         backend->bind("#nano#<F5>%Save!Type a filename:${FILE_NAME}", [&](){savef();}, "Save file");
         backend->bind("#nano#<F6>%Open!Type a filename:${FILE_NAME}", [&](){openf();}, "Open file");
-        backend->bind("#nano#<F7>%Edytuj", [&](){editB();}, "Open file");
-        //backend->bind("#nano#<F5>%Open file",[&](){openf();}, "Open file");
         break;
     case 1:
         backend->bind(".1.prawo", [&](){addB();}, "Go left");

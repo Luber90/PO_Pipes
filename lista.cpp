@@ -124,14 +124,14 @@ void Lista::add(ElementB *n){
     length++;
 }
 
-void Lista::del(int x, int y){
+bool Lista::del(int x, int y){
     if(length>0){
         if(first->getV()->isIn(x, y)){
             ElementB * tmp = first->getNext();
             //delete first;
             first = tmp;
             length--;
-            return;
+            return true;
         }
         ElementB *curr = first;
         while(curr->getNext()){
@@ -139,19 +139,21 @@ void Lista::del(int x, int y){
                 ElementB* tmp = curr->getNext();
                 curr->setNext(tmp->getNext());
                 length--;
+                return true;
                 //delete tmp;
             }
             curr = curr->getNext();
             if (!curr){
-                return;
+                return false;
             }
         }
     }
+    return false;
 }
 
 void Box::chngComm(string c){
     b = c.length();
-    comm = b;
+    comm = c;
 }
 
 void Lista::editB(int x, int y, string c){

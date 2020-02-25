@@ -42,7 +42,7 @@ public:
     Lista();
     ~Lista();
     void add(ElementB *n);
-    void del(int x, int y);
+    bool del(int x, int y);
     int len();
     void delA(int xx, int yy);
     void editB(int x, int y, string c);

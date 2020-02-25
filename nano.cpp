@@ -24,7 +24,6 @@ void Nano::quit()
 {
     bool q = false;
     if(tool->getEntry("IS_SAVED") == "NO")
-    // if(q == true)
     {
         int y, x;
         getmaxyx(stdscr, y, x);
@@ -35,6 +34,7 @@ void Nano::quit()
         wclear(tmp);
         wrefresh(tmp);
         destroy_window(tmp);
+        tool->redraw();
     }
     else
     {
@@ -69,6 +69,7 @@ void Nano::help()
     wclear(help_win);
     wrefresh(help_win);
     destroy_window(help_win);
+    tool->redraw();
 }
 
 
@@ -113,6 +114,33 @@ void Nano::bind(std::string str, std::function<void()> func, std::string help)
     }
 }
 
+void Nano::re_bind(std::string old_bind, std::string new_bind, std::function<void()> func)
+{
+    for(int i = 0; i < bindings.size(); i++)
+    {
+        if(bindings[i].name.find(old_bind) != -1)
+        {
+            bindings[i].name = new_bind;
+            changes = true;
+            break;
+        }
+    }
+}
+
+void Nano::re_bind2(std::string old_bind, std::string new_bind, std::function<void()> func)
+{
+    for(int i = 0; i < bindings.size(); i++)
+    {
+        if(bindings[i].name.find(old_bind) != -1)
+        {
+            bindings[i].name = new_bind;
+            bindings[i].func = func;
+            changes = true;
+            break;
+        }
+    }
+}
+
 std::vector<int> Nano::GetBindTab()
 {
     std::vector<int> tab;
@@ -133,12 +161,12 @@ std::vector<int> Nano::GetBindTab()
         key.assign(bindings[i].name, 0, k);
         if(key == "CTRL")
         {
-            tab.push_back(ctrl(bindings[i].name[k+1]));
+            tab.push_back(ctrl((int)bindings[i].name[k+1]));
         }
         else if (key == "SHIFT")
         {
             const int x = 32;
-            tab.push_back(bindings[i].name[k+1] & ~x);
+            tab.push_back((int)bindings[i].name[k+1] & ~x);
         }
         else if (key[0] == 'F')
         {
@@ -184,20 +212,12 @@ Nano::Nano()
     nonl();
 }
 
-
-
-void Nano::start()
+void Nano::draw_bottom_line()
 {
     int row, col;
     getmaxyx(stdscr, row, col);
     move(row-1, 1);
     refresh();
-
-    bind("#nano#<CTRL>Q%Quit", [&](){this->quit();}, "Exit program");
-    bind("#nano#<CTRL>H%Help", [&](){this->help();}, "Show every keyboard shortcut with its help");
-
-    std::vector<int> bindTab = GetBindTab();
-
     for(int i = 0; i < bindings.size(); i++)
     {
         if(bindings[i].name != "<EDITION>")
@@ -217,6 +237,25 @@ void Nano::start()
         }
     }
     refresh();
+}
+
+
+
+void Nano::start()
+{
+    int row, col;
+    getmaxyx(stdscr, row, col);
+    move(row-1, 1);
+    refresh();
+
+    bind("#nano#<CTRL>Q%Quit", [&](){this->quit();}, "Exit program");
+    bind("#nano#<CTRL>H%Help", [&](){this->help();}, "Show every keyboard shortcut with its help");
+
+    std::vector<int> bindTab = GetBindTab();
+
+    draw_bottom_line();
+    tool->redraw();
+
     int a = 0;
     while(!exit)
     {
@@ -242,7 +281,7 @@ void Nano::start()
                     wmove(message, 5, width/2);
                     echo();
                     wrefresh(message);
-                    mvwscanw(message, 5, width/2 - 2, "%s", tmp);
+                    mvwgetstr(message, 5, width/2 - 2, tmp);
                     entry = tmp;
                     tool->setEntry(name, entry);
                     noecho();
@@ -264,17 +303,7 @@ void Nano::start()
                 {
                     std::string tmp;
                     //tmp.push_back(a);
-                    if(ctrl(a) == a)
-                    {
-                        tmp = "<CTRL>";
-                        tmp.push_back(a);
-                    }
-                    else if((a & ~32) == a)
-                    {
-                        tmp = "<SHIFT>";
-                        tmp.push_back(a);
-                    }
-                    else if(a == KEY_BACKSPACE)
+                    if(a == KEY_BACKSPACE)
                     {
                         tmp = "<BS>";
                     }
@@ -298,13 +327,28 @@ void Nano::start()
                     {
                         tmp = "<DEL>";
                     }
+                    else if(a == KEY_ENTER)
+                    {
+                        tmp = "<ENTER>";
+                    }
+                    else
+                    {
+                        tmp.push_back(static_cast<char>(a));
+                    }
+                    
                     
                     tool->setEntry("KEY", tmp);
                     bindings[j].func();
                 }
             }
         }
-
+        if(changes)
+        {
+            draw_bottom_line();
+            bindTab = GetBindTab();
+            changes = false;
+        }
+        
     }
     
     endwin();

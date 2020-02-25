@@ -11,10 +11,14 @@ class Nano : public Backend
     bool exit = false;
     void quit();
     void help();
+    void draw_bottom_line();
+    bool changes = false;
     
     public:
     Nano();
     void bind(std::string str, std::function<void()> func, std::string help);
+    void re_bind(std::string old_bind, std::string new_bind, std::function<void()> func);
+    void re_bind2(std::string old_bind, std::string new_bind, std::function<void()> func);
     void start();
 
 };

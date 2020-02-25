@@ -27,6 +27,7 @@ public:
     Tool* tool;
     virtual void bind(std::string str, std::function<void()> func, std::string help) = 0;
     virtual void start() = 0;
+    virtual void re_bind2(std::string old_bind, std::string new_bind, std::function<void()> func) = 0;
     std::vector<BindingString> bindings;
 };
 

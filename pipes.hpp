@@ -30,17 +30,19 @@ public:
     void clean();
     void show(Box*a);
     int* findP(Box* a, int xx, int yy);
-    int getMode();
-    void changeMode();
     void savef();
     void openf();
+    void setPath(string namee);
+    bool fileExist(string namee);
 private:
-    int pos[2], i, z, rows, cols, mode, num;
+    int pos[2], i, z, rows, cols, mode, num, prior;
     char tmp[100];
     bool adding;
-    string buff, val, is_saved, key, file_name;
+    string buff, val, is_saved, key, file_name, path, tryb, namebuff;
     Lista boxlist;
     Box* tmpbox;
+    int getMode();
+    void changeMode();
 };
 
 #endif
