@@ -4,34 +4,34 @@
 
 using namespace std;
 
-//class NoElement{};
-
-//class NoSpace{};
-
-
-
 Box::Box(int xx, int yy, string comma){
     x = xx;
     y = yy;
     b = comma.length();
     comm = comma;
 }
+
 int Box::getX(){
     return x;
 }
+
 int Box::getY(){
     return y;
 }
+
 string Box::getComm(){
     return comm;
 }
+
 int Box::length(){
     return b;
 }
+
 bool Box::isIn(int xx, int yy){
     if((xx>=x)&&(xx<=(x+1+b)&&(yy>=y)&&(yy<=y+2))) return true;
     else return false;
 }
+
 bool Box::isOverlap(int xx, int yy, int len){
     int alx = x, arx = x+b+1, ary=y, aly=y+2, blx=xx, brx=xx+len, bry=yy, bly=yy+2;
 
@@ -43,6 +43,7 @@ bool Box::isOverlap(int xx, int yy, int len){
   
     return true;
 }
+
 void Box::addArr(int xx, int yy, int c){
     if(arrcount == 11){
         return;

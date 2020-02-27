@@ -80,16 +80,18 @@ void Pipes::addB(){
             clrtoeol();
         }
         catch(NoSpace){
+            clrtoeol();
             move(rows-2, 0);
-            printw("Brak miejsca!");
+            printw("No space!");
         }
         //noecho();
         is_saved = "NO";
         this->redraw();
     }
     else{
+        clrtoeol();
         move(rows-2, 0);
-        printw("Nie istnieje podany plik!");
+        printw("File doesn't exist!");
     }
 }
 
@@ -123,8 +125,9 @@ void Pipes::addA(){
             backend->re_bind2("F2", "F2-Add/delete connection!Type the type of arrow:${PRIO}", [&](){addA();});
             adding = true;
             tmpbox = boxlist[z]->getV();
+            clrtoeol();
             move(rows-2, 0);
-            printw("Wybieranie");
+            printw("Choosing");
             break;
             }
         }   
@@ -240,6 +243,8 @@ void Pipes::show(Box *a){
                 move(a->arrows[j][1], a->arrows[j][0]+ 1);
                 printw("<");
             }
+            delete tmp;
+            //delete pose;
             if(a->arrows[j][2]==0){
                 attroff(A_REVERSE);
             }
@@ -335,7 +340,8 @@ void Pipes::savef(){
             nazwa = path;
         }
         else{
-            throw(NoName());
+            move(rows-2, 0);
+            printw("No name of the save file!");
         }
     }
     ofstream file(nazwa + ".pipes");
@@ -357,7 +363,8 @@ void Pipes::openf(){
     nazwa = file_name;
     if(!this->fileExist(nazwa + ".pipes")){
         move(rows-2, 0);
-        printw("Nie istnieje podany plik!");
+        clrtoeol();
+        printw("File doesn't exist!");
         return;
     }
     boxlist.reset();
